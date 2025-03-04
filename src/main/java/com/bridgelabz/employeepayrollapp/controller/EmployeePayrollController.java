@@ -1,10 +1,14 @@
 package com.bridgelabz.employeepayrollapp.controller;
 
+import com.bridgelabz.employeepayrollapp.dto.EmployeePayrollDTO;
 import com.bridgelabz.employeepayrollapp.entity.Employee;
-import com.bridgelabz.employeepayrollapp.service.EmployeePayrollService;
+import com.bridgelabz.employeepayrollapp.repository.EmployeePayrollRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,9 +17,9 @@ import java.util.Optional;
 @RequestMapping("/employee")
 public class EmployeePayrollController {
 
-    //Create an instance of EmployeePayrollService It is automatically injects
+    //Create an instance of EmployeePayrollRepository It is automatically injects
     @Autowired
-    private EmployeePayrollService employeePayrollService;
+    private EmployeePayrollRepository employeePayrollRepository;
 
     //Create a method to handle get request
     @GetMapping({"","/"})
@@ -26,31 +30,75 @@ public class EmployeePayrollController {
     //Create a method createEmployeePayroll to saves a Employee details in the repository
     @PostMapping("/add")
     public Employee createEmployeePayroll(@RequestBody Employee employee){
-        return employeePayrollService.createGreetingPayroll(employee);
+        return employeePayrollRepository.save(employee);
     }
 
     //Create a getEmployeeById method to print employee details by their id number and call the method of EmployeeService class
     @GetMapping("/get/{id}")
-    public Optional<Employee> getEmployeeById(@PathVariable Long id){
-        return employeePayrollService.getEmployeeById(id);
+    public  ResponseEntity<EmployeePayrollDTO> getEmployeeById(@PathVariable Long id){
+        //find employee data using id number and store in optional
+        Optional<Employee> employee= employeePayrollRepository.findById(id);
+        //check employee is present or not
+        if(employee.isPresent()){
+            Employee emp=employee.get();
+            EmployeePayrollDTO employeePayrollDTO=new EmployeePayrollDTO(emp.getId(),emp.getEmployeeName(),emp.getEmployeeSalary());
+            return new ResponseEntity<>(employeePayrollDTO, HttpStatus.OK);
+        }else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
     }
 
     //Create a method printAllEmployee to print the details of all employee details
     @GetMapping("/all")
-    public List<Employee> printAllEmployee(){
-        return employeePayrollService.getAllEmployee();
+    public ResponseEntity<List<EmployeePayrollDTO>> printAllEmployee(){
+        //Create a list to store all employee object details
+        List<Employee> employeeAll=employeePayrollRepository.findAll();
+        //Create a list of EmployeePayrollDTO class
+        List<EmployeePayrollDTO>employeePayrollDTOS=new ArrayList<>();
+        if(!employeeAll.isEmpty()){
+            //use for loop to store employee specific data in EmployeePayrollDTO class then after print the data
+            for(Employee employee:employeeAll) {
+                employeePayrollDTOS.add(new EmployeePayrollDTO(employee.getId(),employee.getEmployeeName(),employee.getEmployeeSalary()));
+            }
+            return ResponseEntity.of(Optional.of(employeePayrollDTOS));
+        }else{
+            //if employee not present than return a status NOT FOUND
+           return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     //Create a method to update the employee details by employee id number
     @PutMapping("/update/{id}")
-    public Employee updateEmployeeDetails(@PathVariable Long id,@RequestBody Employee employee){
-        return employeePayrollService.updateEmployeeDetails(id,employee);
+    public String updateEmployeeDetails(@PathVariable Long id,@RequestBody Employee employee){
+        //find employee data using id number and store in optional
+        Optional<Employee> employees= employeePayrollRepository.findById(id);
+        //check employee is present or not
+        if(employees.isPresent()){
+            //get employee details
+            Employee emp=employees.get();
+            //update employee details as salary and name
+            emp.setEmployeeName(employee.getEmployeeName());
+            emp.setEmployeeSalary(employee.getEmployeeSalary());
+            employeePayrollRepository.save(emp);
+            return "Employee Record Updated Successfully!";
+        }else{
+            return "Employee NOT Found";
+        }
+
     }
+
 
     //Create a method deleteEmployeeDetails to delete employee detail by id number
     @DeleteMapping("/delete/{id}")
-    public String deleteEmployeeDetails(@PathVariable Long id) {
-        return employeePayrollService.deleteEmployeeDetails(id) ? "Employee Detail is deleted!" : id + " Id Number Employee is not exist!";
+    public boolean deleteEmployeeDetails(@PathVariable Long id) {
+        Optional<Employee> employee=employeePayrollRepository.findById(id);
+        //check id is present or not
+        if(employee.isPresent()){
+           employeePayrollRepository.deleteById(id);
+           return true;
+        }
+        return false;
     }
 
 
