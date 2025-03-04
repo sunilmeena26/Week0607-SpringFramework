@@ -1,11 +1,15 @@
 package com.bridgelabz.employeepayrollapp.service;
 
+import com.bridgelabz.employeepayrollapp.dto.EmployeePayrollDTO;
 import com.bridgelabz.employeepayrollapp.entity.Employee;
 import com.bridgelabz.employeepayrollapp.repository.EmployeePayrollRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,27 +27,46 @@ public class EmployeePayrollService {
     }
 
     //Create a getEmployeePayrollById method to print employee details by their id number and call the method of EmployeeService class
-    public Optional<Employee> getEmployeeById(Long id){
-        return employeePayrollRepository.findById(id);
+    public ResponseEntity<EmployeePayrollDTO> getEmployeeById(Long id){
+        //find employee data using id number and store in optional
+        Optional<Employee> employee=employeePayrollRepository.findById(id);
+        //check employee is present or not
+        if(employee.isPresent()){
+            Employee emp=employee.get();
+            EmployeePayrollDTO employeePayrollDTO= new EmployeePayrollDTO(emp.getId(),emp.getEmployeeName(),emp.getEmployeeSalary());
+            System.out.println("Hello Employee");
+            return ResponseEntity.of(Optional.of(employeePayrollDTO));
+            //return new ResponseEntity<>(employeePayrollDTO, HttpStatus.OK);
+        }else{
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     //Create a method getAllEmployee to print all employee details
-    public List<Employee> getAllEmployee(){
-        return employeePayrollRepository.findAll();
+    public List<EmployeePayrollDTO> getAllEmployee(){
+        List<Employee>employees= employeePayrollRepository.findAll();
+        List<EmployeePayrollDTO>employeePayrollDTOS=new ArrayList<>();
+        for(Employee employee:employees){
+            employeePayrollDTOS.add(new EmployeePayrollDTO(employee.getId(),employee.getEmployeeName(),employee.getEmployeeSalary()));
+        }
+        return employeePayrollDTOS;
     }
 
     //Create a method to update the employee details by their id number
-    public Employee updateEmployeeDetails(Long id,Employee employee){
+    public String updateEmployeeDetails(Long id,Employee employee){
+        //find employee data using id number and store in optional
         Optional<Employee> employee1=employeePayrollRepository.findById(id);
+        //check employee is present or not
         if(employee1.isPresent()){
+            //get employee details
             Employee existingEmployee=employee1.get();
+            //update employee details as salary and name
             existingEmployee.setEmployeeSalary(employee.getEmployeeSalary());
             existingEmployee.setEmployeeName(employee.getEmployeeName());
-            existingEmployee.setEmployeeRole(employee.getEmployeeRole());
-            existingEmployee.setId(employee.getId());
-            return employeePayrollRepository.save(existingEmployee);
+            employeePayrollRepository.save(existingEmployee);
+            return "Employee Record Successfully Updated";
         }else{
-            throw new RuntimeException("Employee is not present by id: "+id);
+            return "Employee Is Not Found";
         }
     }
 
