@@ -1,8 +1,11 @@
 package com.bridgelabz.employeepayrollapp.controller;
 
+import com.bridgelabz.employeepayrollapp.dto.EmployeePayrollDTO;
 import com.bridgelabz.employeepayrollapp.entity.Employee;
 import com.bridgelabz.employeepayrollapp.service.EmployeePayrollService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,19 +34,26 @@ public class EmployeePayrollController {
 
     //Create a getEmployeeById method to print employee details by their id number and call the method of EmployeeService class
     @GetMapping("/get/{id}")
-    public Optional<Employee> getEmployeeById(@PathVariable Long id){
+    public  ResponseEntity<EmployeePayrollDTO> getEmployeeById(@PathVariable Long id){
         return employeePayrollService.getEmployeeById(id);
     }
 
     //Create a method printAllEmployee to print the details of all employee details
     @GetMapping("/all")
-    public List<Employee> printAllEmployee(){
-        return employeePayrollService.getAllEmployee();
+    public ResponseEntity<List<EmployeePayrollDTO>> printAllEmployee(){
+        //Create a list to store all employee object details
+        List<EmployeePayrollDTO> employeePayrollDTOS=employeePayrollService.getAllEmployee();
+        if(!employeePayrollDTOS.isEmpty()){
+            return ResponseEntity.of(Optional.of(employeePayrollDTOS));
+        }else{
+            //if employee not present than return a status NOT FOUND
+           return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     //Create a method to update the employee details by employee id number
     @PutMapping("/update/{id}")
-    public Employee updateEmployeeDetails(@PathVariable Long id,@RequestBody Employee employee){
+    public String updateEmployeeDetails(@PathVariable Long id,@RequestBody Employee employee){
         return employeePayrollService.updateEmployeeDetails(id,employee);
     }
 
